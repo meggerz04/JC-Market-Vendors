@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>JC Farmers Market Vendor Setup Guide</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --color-bg: #ffffff; --color-bg-secondary: #f5f5f3; --color-bg-tertiary: #eeede9;
+    --color-text: #1a1a1a; --color-text-secondary: #6b6b68;
+    --color-border: rgba(0,0,0,0.12); --color-border-secondary: rgba(0,0,0,0.22);
+    --color-green: #1D9E75; --color-green-dark: #0F6E56; --color-green-light: #E1F5EE;
+    --radius-md: 8px; --radius-lg: 12px;
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --color-bg: #1c1c1c; --color-bg-secondary: #262626; --color-bg-tertiary: #2e2e2e;
+      --color-text: #f0f0ee; --color-text-secondary: #999994;
+      --color-border: rgba(255,255,255,0.12); --color-border-secondary: rgba(255,255,255,0.22);
+      --color-green-light: #0a3d2a;
+    }
+  }
+  body { font-family: var(--font); background: var(--color-bg-tertiary); display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+  #app { display: flex; flex-direction: column; width: 100%; max-width: 560px; height: 700px; border: 0.5px solid var(--color-border); border-radius: var(--radius-lg); overflow: hidden; background: var(--color-bg); box-shadow: 0 4px 24px rgba(0,0,0,0.08); position: relative; }
+  #header { padding: 12px 15px; border-bottom: 0.5px solid var(--color-border); background: var(--color-bg-secondary); display: flex; align-items: center; gap: 9px; flex-shrink: 0; z-index: 10; }
+  .header-icon { width: 29px; height: 29px; background: var(--color-green); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .header-icon svg { width: 15px; height: 15px; fill: white; }
+  .header-text h2 { font-size: 12.5px; font-weight: 600; color: var(--color-text); }
+  .header-text p { font-size: 11px; color: var(--color-text-secondary); }
+  .tab-bar { display: flex; margin-left: auto; gap: 2px; background: var(--color-bg); border: 0.5px solid var(--color-border); border-radius: var(--radius-md); padding: 2px; }
+  .tab-btn { font-size: 11px; font-family: var(--font); padding: 3px 9px; border: none; border-radius: 6px; cursor: pointer; background: transparent; color: var(--color-text-secondary); transition: background 0.12s, color 0.12s; }
+  .tab-btn.active { background: var(--color-green); color: white; }
+  #chat-panel, #checklist-panel { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+  .hidden { display: none !important; }
+  #messages { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+  .msg { display: flex; flex-direction: column; max-width: 88%; }
+  .msg.user { align-self: flex-end; align-items: flex-end; }
+  .msg.bot { align-self: flex-start; align-items: flex-start; }
+  .bubble { padding: 10px 14px; border-radius: 14px; font-size: 13px; line-height: 1.65; color: var(--color-text); }
+  .msg.user .bubble { background: var(--color-green); color: white; border-bottom-right-radius: 4px; }
+  .msg.bot .bubble { background: var(--color-bg-secondary); border: 0.5px solid var(--color-border); border-bottom-left-radius: 4px; }
+  .bubble a { color: var(--color-green-dark); text-decoration: underline; cursor: pointer; }
+  .bubble a:hover { color: #085041; }
+  .msg.user .bubble a { color: #9FE1CB; }
+  .bubble p { margin: 0 0 8px; } .bubble p:last-child { margin-bottom: 0; }
+  .bubble ul, .bubble ol { padding-left: 18px; margin: 6px 0 8px; }
+  .bubble ul:last-child, .bubble ol:last-child { margin-bottom: 0; }
+  .bubble li { margin-bottom: 4px; line-height: 1.55; } .bubble li:last-child { margin-bottom: 0; }
+  .bubble strong { font-weight: 600; }
+  .chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
+  .chip { background: var(--color-bg); border: 0.5px solid var(--color-green); color: var(--color-green-dark); font-size: 11.5px; padding: 4px 10px; border-radius: 20px; cursor: pointer; font-family: var(--font); transition: background 0.12s; }
+  .chip:hover { background: var(--color-green-light); }
+  #input-area { border-top: 0.5px solid var(--color-border); padding: 9px 11px; display: flex; gap: 7px; align-items: flex-end; flex-shrink: 0; }
+  #user-input { flex: 1; border: 0.5px solid var(--color-border-secondary); border-radius: 18px; padding: 7px 13px; font-size: 13px; font-family: var(--font); color: var(--color-text); background: var(--color-bg); outline: none; resize: none; line-height: 1.4; max-height: 80px; overflow-y: auto; }
+  #user-input:focus { border-color: var(--color-green); }
+  #send-btn { width: 32px; height: 32px; border-radius: 50%; background: var(--color-green); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background 0.12s; }
+  #send-btn:hover { background: var(--color-green-dark); }
+  #send-btn:disabled { background: var(--color-border); cursor: default; }
+  #send-btn svg { width: 14px; height: 14px; fill: white; }
+  .typing { display: flex; gap: 4px; padding: 10px 13px; background: var(--color-bg-secondary); border: 0.5px solid var(--color-border); border-radius: 14px; border-bottom-left-radius: 4px; width: fit-content; }
+  .dot { width: 5px; height: 5px; background: var(--color-text-secondary); border-radius: 50%; animation: bounce 1.1s ease-in-out infinite; }
+  .dot:nth-child(2) { animation-delay: 0.18s; } .dot:nth-child(3) { animation-delay: 0.36s; }
+  @keyframes bounce { 0%,80%,100%{transform:translateY(0)} 40%{transform:translateY(-4px)} }
+  #checklist-panel { overflow: hidden; display: flex; flex-direction: column; }
+  #progress-sticky { flex-shrink: 0; background: var(--color-bg); border-bottom: 0.5px solid var(--color-border); padding: 12px 15px 10px; z-index: 5; }
+  .prog-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .prog-label-left { font-size: 12px; font-weight: 600; color: var(--color-text); }
+  .prog-label-right { display: flex; align-items: baseline; gap: 4px; }
+  .prog-pct { font-size: 20px; font-weight: 600; color: var(--color-green); transition: all 0.4s cubic-bezier(.34,1.56,.64,1); line-height: 1; }
+  .prog-of { font-size: 11px; color: var(--color-text-secondary); }
+  .prog-track { width: 100%; height: 10px; background: var(--color-bg-secondary); border-radius: 10px; overflow: hidden; }
+  .prog-fill { height: 100%; border-radius: 10px; background: var(--color-green); transition: width 0.55s cubic-bezier(.34,1.56,.64,1); position: relative; overflow: hidden; }
+  .prog-fill::after { content: ''; position: absolute; top: 0; left: -100%; width: 60%; height: 100%; background: rgba(255,255,255,0.28); animation: shimmer 2.4s ease-in-out infinite; }
+  @keyframes shimmer { 0%{left:-60%} 100%{left:160%} }
+  .prog-milestone-row { display: flex; justify-content: space-between; margin-top: 6px; }
+  .prog-milestone { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .prog-milestone-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--color-border-secondary); transition: background 0.3s, transform 0.3s cubic-bezier(.34,1.56,.64,1); }
+  .prog-milestone-dot.reached { background: var(--color-green); transform: scale(1.3); }
+  .prog-milestone-dot.completed { background: var(--color-green); }
+  .prog-milestone-lbl { font-size: 9.5px; color: var(--color-text-secondary); }
+  .prog-milestone-lbl.reached { color: var(--color-green-dark); font-weight: 600; }
+  .prog-message { font-size: 11px; color: var(--color-green-dark); text-align: center; margin-top: 5px; min-height: 15px; font-weight: 600; }
+  #checklist-scroll { flex: 1; overflow-y: auto; padding: 10px 15px 14px; }
+  .cl-topbar { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
+  .cl-title { font-size: 13px; font-weight: 600; color: var(--color-text); flex: 1; }
+  .cl-action-btn { font-size: 11px; font-family: var(--font); background: none; border: 0.5px solid var(--color-border-secondary); border-radius: var(--radius-md); padding: 4px 9px; cursor: pointer; color: var(--color-text-secondary); display: flex; align-items: center; gap: 4px; transition: color 0.12s; }
+  .cl-action-btn:hover { color: var(--color-text); }
+  .cl-action-btn svg { width: 11px; height: 11px; fill: currentColor; }
+  .cl-section { margin-bottom: 12px; }
+  .cl-section-title { font-size: 10.5px; font-weight: 600; color: var(--color-green-dark); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px; padding-bottom: 4px; border-bottom: 0.5px solid var(--color-border); }
+  .cl-item { border-bottom: 0.5px solid var(--color-border); padding: 7px 0 4px; }
+  .cl-item:last-child { border-bottom: none; }
+  .cl-item-row { display: flex; align-items: flex-start; gap: 8px; cursor: pointer; }
+  .cl-item-row:hover .cl-box { border-color: var(--color-green); }
+  .cl-box { width: 15px; height: 15px; border: 1.5px solid var(--color-border-secondary); border-radius: 4px; flex-shrink: 0; margin-top: 2px; display: flex; align-items: center; justify-content: center; transition: background 0.15s, border-color 0.15s; }
+  .cl-box.checked { background: var(--color-green); border-color: var(--color-green); }
+  .cl-box.just-checked { animation: pop 0.35s cubic-bezier(.34,1.56,.64,1); }
+  @keyframes pop { 0%{transform:scale(1)} 40%{transform:scale(1.45)} 100%{transform:scale(1)} }
+  .cl-box.checked::after { content: ''; display: block; width: 8px; height: 4px; border-left: 1.5px solid white; border-bottom: 1.5px solid white; transform: rotate(-45deg) translateY(-1px); }
+  .cl-label { font-size: 12.5px; line-height: 1.5; color: var(--color-text); flex: 1; }
+  .cl-label.done { color: var(--color-text-secondary); text-decoration: line-through; }
+  .cl-item-actions { display: flex; margin-top: 3px; padding-left: 23px; }
+  .cl-note-toggle { font-size: 11px; color: var(--color-text-secondary); background: none; border: none; cursor: pointer; font-family: var(--font); padding: 0; }
+  .cl-note-toggle:hover { color: var(--color-green-dark); }
+  .cl-note-area { margin-top: 4px; padding-left: 23px; }
+  .cl-note-input { width: 100%; font-size: 12px; font-family: var(--font); border: 0.5px solid var(--color-border-secondary); border-radius: var(--radius-md); padding: 5px 8px; color: var(--color-text); background: var(--color-bg); resize: none; min-height: 48px; outline: none; line-height: 1.5; }
+  .cl-note-input:focus { border-color: var(--color-green); }
+  .cl-note-display { font-size: 11.5px; color: var(--color-text-secondary); background: var(--color-bg-secondary); border-radius: var(--radius-md); padding: 4px 8px; line-height: 1.5; font-style: italic; }
+  .cl-note-btns { display: flex; gap: 5px; margin-top: 3px; }
+  .cl-note-save { font-size: 11px; font-family: var(--font); background: var(--color-green); color: white; border: none; border-radius: var(--radius-md); padding: 3px 9px; cursor: pointer; }
+  .cl-note-save:hover { background: var(--color-green-dark); }
+  .cl-note-del { font-size: 11px; font-family: var(--font); background: none; color: var(--color-text-secondary); border: 0.5px solid var(--color-border-secondary); border-radius: var(--radius-md); padding: 3px 9px; cursor: pointer; }
+  .auto-badge { font-size: 9.5px; background: var(--color-green-light); color: var(--color-green-dark); border-radius: 10px; padding: 1px 6px; margin-left: 5px; font-weight: 600; }
+  .cl-empty { text-align: center; padding: 32px 20px; color: var(--color-text-secondary); font-size: 13px; line-height: 1.6; }
+  .cl-empty strong { display: block; font-size: 14px; font-weight: 600; color: var(--color-text); margin-bottom: 6px; }
+  .cl-pick-item { display: flex; align-items: center; padding: 9px 0; border-bottom: 0.5px solid var(--color-border); cursor: pointer; font-size: 13px; color: var(--color-text); }
+  .cl-pick-item:last-child { border-bottom: none; }
+  .cl-pick-item:hover { color: var(--color-green-dark); }
+  .cl-pick-arrow { font-size: 11px; color: var(--color-text-secondary); margin-left: auto; }
+  .confetti-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 20; border-radius: var(--radius-lg); }
+  .email-modal { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: center; z-index: 30; border-radius: var(--radius-lg); }
+  .email-modal-inner { background: var(--color-bg); border-radius: var(--radius-lg); padding: 20px; width: 290px; border: 0.5px solid var(--color-border); }
+  .email-modal-title { font-size: 13.5px; font-weight: 600; color: var(--color-text); margin-bottom: 5px; }
+  .email-modal-sub { font-size: 12px; color: var(--color-text-secondary); margin-bottom: 11px; line-height: 1.5; }
+  .email-modal-input { width: 100%; border: 0.5px solid var(--color-border-secondary); border-radius: var(--radius-md); padding: 7px 10px; font-size: 13px; font-family: var(--font); color: var(--color-text); background: var(--color-bg); outline: none; }
+  .email-modal-input:focus { border-color: var(--color-green); }
+  .email-modal-actions { display: flex; gap: 7px; margin-top: 11px; justify-content: flex-end; }
+  .email-modal-cancel { font-size: 12px; font-family: var(--font); background: none; border: 0.5px solid var(--color-border-secondary); border-radius: var(--radius-md); padding: 5px 12px; cursor: pointer; color: var(--color-text-secondary); }
+  .email-modal-send { font-size: 12px; font-family: var(--font); background: var(--color-green); color: white; border: none; border-radius: var(--radius-md); padding: 5px 12px; cursor: pointer; }
+  .email-modal-send:hover { background: var(--color-green-dark); }
+  .email-modal-msg { font-size: 12px; color: var(--color-green-dark); margin-top: 7px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="header">
+    <div class="header-icon"><svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/></svg></div>
+    <div class="header-text"><h2>Jersey City Farmers Market Vendor Setup Guide</h2><p>Powered by Jersey City HHS</p></div>
+    <div class="tab-bar">
+      <button class="tab-btn active" id="tab-chat" onclick="switchTab('chat')">Chat</button>
+      <button class="tab-btn" id="tab-checklist" onclick="switchTab('checklist')">My Checklist</button>
+    </div>
+  </div>
+  <div id="chat-panel">
+    <div id="messages"></div>
+    <div id="input-area">
+      <textarea id="user-input" placeholder="Ask anything about becoming a vendor..." rows="1"></textarea>
+      <button id="send-btn"><svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+    </div>
+  </div>
+  <div id="checklist-panel" class="hidden">
+    <div id="progress-sticky">
+      <div class="prog-header">
+        <span class="prog-label-left" id="prog-type-label">Your progress</span>
+        <div class="prog-label-right">
+          <span class="prog-pct" id="prog-pct">0%</span>
+          <span class="prog-of" id="prog-of">0 of 0 steps</span>
+        </div>
+      </div>
+      <div class="prog-track"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+      <div class="prog-milestone-row" id="prog-milestones"></div>
+      <div class="prog-message" id="prog-message"></div>
+    </div>
+    <div id="checklist-scroll"></div>
+  </div>
+  <canvas class="confetti-canvas" id="confetti-canvas"></canvas>
+  <div id="email-modal-container"></div>
+</div>
+
+<script>
+const CHECKLIST_KEY='jc_vendor_checklist_v2';
+const ANALYTICS_KEY='jc_vendor_analytics_v1';
+const HHS_URL='https://www.jerseycitynj.gov/cityhall/health';
+const MAPS_URL='https://www.google.com/maps/place/360+Martin+Luther+King+Dr,+Jersey+City,+NJ+07305/@40.7105433,-74.0791122,17z/data=!3m1!4b1!4m5!3m4!1s0x89c2512076416d3f:0x66ffb88c56392b7e!8m2!3d40.7105433!4d-74.0769182';
+
+const CHECKLISTS={
+  food_general:{label:"Food Vendor — General",sections:[
+    {title:"1. Find your market",items:[{id:"fm1",text:"Research available Jersey City farmers markets"},{id:"fm2",text:"Contact your chosen market sponsor to apply as a vendor"},{id:"fm3",text:"Confirm you've been approved and added to the vendor list"}]},
+    {title:"2. Gather your documents",items:[{id:"fd1",text:"Current Health Dept. license for your commercial kitchen (valid through event date)"},{id:"fd2",text:"Most recent kitchen health inspection report"},{id:"fd3",text:"Valid driver's license or state-issued ID"},{id:"fd4",text:"NJ Certificate of Authority"},{id:"fd5",text:"Federal Tax ID or Social Security card"},{id:"fd6",text:"Invoice from your food source"},{id:"fd7",text:"Food Protection Certificate or ServSafe cert (at least one employee)"},{id:"fd8",text:"Proof of $500,000 business liability insurance"},{id:"fd9",text:"Completed Temporary Food Vendor Application form"}]},
+    {title:"3. Apply for your permit",items:[{id:"fp1",text:"Print all documents (no email submissions accepted)"},{id:"fp2",text:"Visit JC Bureau of Licensing in person: 1 Jackson Square, Jersey City, NJ 07305"},{id:"fp3",text:"Pay permit fee (cash, debit, or credit card)"},{id:"fp4",text:"Receive your Temporary Food Vendor Permit"}]},
+    {title:"4. At the market",items:[{id:"fat1",text:"Display your permit in a visible location at your booth"},{id:"fat2",text:"Ensure at least one employee has a valid food handler certificate on site"},{id:"fat3",text:"If accepting SNAP/EBT or WIC benefits, post a sign at your booth"}]}
+  ]},
+  food_cottage:{label:"Cottage Food Vendor",sections:[
+    {title:"1. Find your market",items:[{id:"cfm1",text:"Research available Jersey City farmers markets"},{id:"cfm2",text:"Contact your chosen market sponsor to apply as a vendor"},{id:"cfm3",text:"Confirm you've been approved and added to the vendor list"}]},
+    {title:"2. Get your NJ Cottage Food License",items:[{id:"cfl1",text:"Complete the NJ Cottage Food License application"},{id:"cfl2",text:"Prepare a Product Questionnaire for each product, frosting, and filling"},{id:"cfl3",text:"Gather proof of water potability (well water report or recent water bill)"},{id:"cfl4",text:"Obtain a Food Manager's Certificate"},{id:"cfl5",text:"Email application + docs to cfo@doh.nj.gov"},{id:"cfl6",text:"Pay $100 state application fee"},{id:"cfl7",text:"Receive NJ Cottage Food License"}]},
+    {title:"3. Apply for your JC vendor permit",items:[{id:"cfp1",text:"Complete the Temporary Food Vendor Application form"},{id:"cfp2",text:"Print all documents (no email submissions accepted)"},{id:"cfp3",text:"Visit JC Bureau of Licensing in person: 1 Jackson Square, Jersey City, NJ 07305"},{id:"cfp4",text:"Pay permit fee (cash, debit, or credit card)"}]},
+    {title:"4. At the market",items:[{id:"cfat1",text:"Display your permit in a visible location at your booth"},{id:"cfat2",text:"Ensure at least one employee has a valid food handler certificate on site"}]}
+  ]},
+  food_truck:{label:"Food Truck Vendor",sections:[
+    {title:"1. Find your market",items:[{id:"ftm1",text:"Research available Jersey City farmers markets"},{id:"ftm2",text:"Contact your chosen market sponsor to apply as a vendor"},{id:"ftm3",text:"Confirm you've been approved and added to the vendor list"}]},
+    {title:"2. Get your Fire Department Certificate first",items:[{id:"ftf1",text:"Contact JC Fire Department: 2 Jackson Square, (201) 547-4255"},{id:"ftf2",text:"Obtain Fire Department Certificate (required before health permit)"},{id:"ftf3",text:"Note: Liberty State Park, Lincoln Park, Washington Park — contact event organizer instead"}]},
+    {title:"3. Gather your documents",items:[{id:"ftd1",text:"Current Health Dept. license for your kitchen/commissary"},{id:"ftd2",text:"Most recent kitchen health inspection report"},{id:"ftd3",text:"Valid driver's license or state-issued ID"},{id:"ftd4",text:"NJ Certificate of Authority"},{id:"ftd5",text:"Federal Tax ID or Social Security card"},{id:"ftd6",text:"Invoice from your food source"},{id:"ftd7",text:"Food Protection Certificate or ServSafe cert"},{id:"ftd8",text:"Proof of $500,000 business liability insurance"},{id:"ftd9",text:"Valid vehicle registration"},{id:"ftd10",text:"Valid vehicle insurance card"},{id:"ftd11",text:"Fire Department Certificate"},{id:"ftd12",text:"Completed Temporary Food Vendor Application"}]},
+    {title:"4. Apply for your permit",items:[{id:"ftp1",text:"Print all documents (no email submissions accepted)"},{id:"ftp2",text:"Visit JC Bureau of Licensing in person: 1 Jackson Square, Jersey City, NJ 07305"},{id:"ftp3",text:"Pay permit fee (cash, debit, or credit card)"}]},
+    {title:"5. At the market",items:[{id:"ftat1",text:"Display your permit in a visible location"},{id:"ftat2",text:"Ensure at least one employee has a valid food handler certificate on site"}]}
+  ]},
+  raw_meat:{label:"Raw Meat Vendor",sections:[
+    {title:"1. Find your market",items:[{id:"rmm1",text:"Research available Jersey City farmers markets"},{id:"rmm2",text:"Contact your chosen market sponsor to apply as a vendor"},{id:"rmm3",text:"Confirm you've been approved and added to the vendor list"}]},
+    {title:"2. Gather standard food vendor documents",items:[{id:"rmd1",text:"Current Health Dept. license for your kitchen (valid through event date)"},{id:"rmd2",text:"Most recent kitchen health inspection report"},{id:"rmd3",text:"Valid driver's license or state-issued ID"},{id:"rmd4",text:"NJ Certificate of Authority"},{id:"rmd5",text:"Federal Tax ID or Social Security card"},{id:"rmd6",text:"Invoice from food source"},{id:"rmd7",text:"Food Protection Certificate or ServSafe cert"},{id:"rmd8",text:"Proof of $500,000 business liability insurance"}]},
+    {title:"3. Gather raw meat-specific documents",items:[{id:"rmx1",text:"USDA Grant of Inspection from your slaughterhouse (required annually)"},{id:"rmx2",text:"Most recent invoice from slaughterhouse showing they package the product"},{id:"rmx3",text:"If using a butcher shop: their most recent health inspection and license"},{id:"rmx4",text:"At least one employee must have a valid food handler certificate"}]},
+    {title:"4. Apply for your permit",items:[{id:"rmp1",text:"Print all documents (no email submissions accepted)"},{id:"rmp2",text:"Visit JC Bureau of Licensing in person: 1 Jackson Square, Jersey City, NJ 07305"},{id:"rmp3",text:"Pay permit fee (cash, debit, or credit card)"}]},
+    {title:"5. At the market",items:[{id:"rmat1",text:"Display your permit in a visible location"},{id:"rmat2",text:"Ensure at least one employee with food handler cert is on site"}]}
+  ]},
+  non_food:{label:"Non-Food Vendor",sections:[
+    {title:"1. Find your market",items:[{id:"nfm1",text:"Research available Jersey City farmers markets"},{id:"nfm2",text:"Contact your chosen market sponsor to apply as a vendor"},{id:"nfm3",text:"Confirm you've been approved and added to the vendor list"}]},
+    {title:"2. Complete market requirements",items:[{id:"nfr1",text:"Follow your market sponsor's specific vendor requirements"},{id:"nfr2",text:"Confirm any market-specific fees and payment schedule with the sponsor"},{id:"nfr3",text:"Note: If you sell anything ingested by mouth, you need a food vendor permit"}]},
+    {title:"3. At the market",items:[{id:"nfat1",text:"Display any required market permits or licenses at your booth"},{id:"nfat2",text:"Follow all market rules set by your sponsor"}]}
+  ]}
+};
+
+const MILESTONES=[25,50,75,100];
+const MILESTONE_MSGS={25:"Great start — you're on your way!",50:"Halfway there — keep going!",75:"Almost done — you're so close!",100:"You did it! All steps complete!"};
+let checklistState={},notes={},openNotes={},activeChecklist=null,autoCheckedIds=new Set(),lastPct=0,isLoading=false,conversationHistory=[];
+let sessionId,userId,sessionStart,currentPctMilestone=0;
+
+function lsLoad(){try{const r=localStorage.getItem(CHECKLIST_KEY);if(r){const p=JSON.parse(r);checklistState=p.checks||{};notes=p.notes||{};activeChecklist=p.activeChecklist||null;autoCheckedIds=new Set(p.autoCheckedIds||[]);}}catch(e){}}
+function lsSave(){try{localStorage.setItem(CHECKLIST_KEY,JSON.stringify({checks:checklistState,notes,activeChecklist,autoCheckedIds:[...autoCheckedIds]}));}catch(e){}}
+function getCompletion(k){let total=0,done=0;CHECKLISTS[k].sections.forEach(s=>s.items.forEach(i=>{total++;if(checklistState[i.id])done++;}));return{total,done};}
+
+function generateId(prefix){return prefix+'_'+Math.random().toString(36).slice(2,10)+Date.now().toString(36);}
+function detectDevice(){return(window.innerWidth||screen.width)<=768?'mobile':'desktop';}
+
+function loadAnalytics(){try{const r=localStorage.getItem(ANALYTICS_KEY);if(r)return JSON.parse(r);}catch(e){}return{totalSessions:0,uniqueUsers:{},sessionLog:[],businessNames:[]};}
+function saveAnalytics(data){try{localStorage.setItem(ANALYTICS_KEY,JSON.stringify(data));}catch(e){}}
+
+function initAnalytics(){
+  sessionId=generateId('s');sessionStart=Date.now();
+  const device=detectDevice();
+  let analytics=loadAnalytics();
+  let storedUid=localStorage.getItem('jc_uid');
+  if(!storedUid){storedUid=generateId('u');localStorage.setItem('jc_uid',storedUid);}
+  userId=storedUid;
+  const isNewUser=!analytics.uniqueUsers[userId];
+  if(isNewUser)analytics.uniqueUsers[userId]={firstSeen:Date.now(),sessions:0};
+  analytics.uniqueUsers[userId].sessions=(analytics.uniqueUsers[userId].sessions||0)+1;
+  analytics.uniqueUsers[userId].lastSeen=Date.now();
+  analytics.totalSessions=(analytics.totalSessions||0)+1;
+  analytics.sessionLog=analytics.sessionLog||[];
+  analytics.sessionLog.push({id:sessionId,userId,device,startTime:Date.now(),durationSeconds:0,checklist:{type:null,milestones:[],finalPct:0,engaged:false},isNewUser});
+  saveAnalytics(analytics);
+  window.addEventListener('beforeunload',()=>updateSessionDuration());
+  setInterval(()=>updateSessionDuration(),15000);
+}
+
+function updateSessionDuration(){
+  const analytics=loadAnalytics();
+  const idx=analytics.sessionLog.findIndex(s=>s.id===sessionId);
+  if(idx>=0){analytics.sessionLog[idx].durationSeconds=Math.round((Date.now()-sessionStart)/1000);saveAnalytics(analytics);}
+}
+
+function recordChecklistMilestone(pct){
+  if(pct<=currentPctMilestone)return;currentPctMilestone=pct;
+  const analytics=loadAnalytics();
+  const idx=analytics.sessionLog.findIndex(s=>s.id===sessionId);
+  if(idx>=0){analytics.sessionLog[idx].checklist.type=activeChecklist;analytics.sessionLog[idx].checklist.finalPct=pct;analytics.sessionLog[idx].checklist.engaged=true;if(!analytics.sessionLog[idx].checklist.milestones.includes(pct))analytics.sessionLog[idx].checklist.milestones.push(pct);saveAnalytics(analytics);}
+}
+
+function recordBusinessName(name){
+  if(!name||name.trim().length<2)return;
+  const analytics=loadAnalytics();
+  analytics.businessNames=analytics.businessNames||[];
+  analytics.businessNames.push({name:name.trim(),userId,sessionId,timestamp:Date.now()});
+  saveAnalytics(analytics);
+}
+
+function updateProgressBar(animate){
+  if(!activeChecklist){document.getElementById('progress-sticky').style.display='none';return;}
+  document.getElementById('progress-sticky').style.display='block';
+  const{total,done}=getCompletion(activeChecklist);
+  const pct=total>0?Math.round((done/total)*100):0;
+  document.getElementById('prog-type-label').textContent=CHECKLISTS[activeChecklist].label;
+  document.getElementById('prog-of').textContent=`${done} of ${total} steps`;
+  const pctEl=document.getElementById('prog-pct'),fillEl=document.getElementById('prog-fill');
+  pctEl.textContent=pct+'%';fillEl.style.width=pct+'%';
+  document.getElementById('prog-milestones').innerHTML=MILESTONES.map(m=>{const r=pct>=m;return`<div class="prog-milestone"><div class="prog-milestone-dot ${r?(pct>m?'completed':'reached'):''}"></div><span class="prog-milestone-lbl ${pct===m?'reached':''}">${m}%</span></div>`;}).join('');
+  let msg='';for(const m of[100,75,50,25]){if(pct>=m){msg=MILESTONE_MSGS[m];break;}}
+  document.getElementById('prog-message').textContent=msg;
+  if(animate&&pct>lastPct){
+    pctEl.style.transform='scale(1.25)';pctEl.style.color='#0F6E56';
+    setTimeout(()=>{pctEl.style.transform='scale(1)';pctEl.style.color='';},400);
+    for(const m of MILESTONES){if(pct>=m&&lastPct<m){launchConfetti();recordChecklistMilestone(pct);break;}}
+  }
+  if(pct>0)recordChecklistMilestone(pct);
+  lastPct=pct;
+}
+
+function launchConfetti(){
+  const canvas=document.getElementById('confetti-canvas'),ctx=canvas.getContext('2d');
+  canvas.width=canvas.offsetWidth;canvas.height=canvas.offsetHeight;
+  const colors=['#1D9E75','#5DCAA5','#9FE1CB','#E1F5EE','#0F6E56','#FAC775','#ffffff'];
+  const pieces=Array.from({length:65},()=>({x:Math.random()*canvas.width,y:-20-Math.random()*80,r:Math.random()*5+2,color:colors[Math.floor(Math.random()*colors.length)],tilt:Math.random()*10-5,tileAngle:0,tiltAngleInc:Math.random()*0.04+0.02,vx:(Math.random()-0.5)*1.8,vy:Math.random()*1.4+0.8,opacity:1,shape:Math.random()>0.5?'rect':'circle',fadeStart:canvas.height*0.72}));
+  let frame=0;
+  (function draw(){ctx.clearRect(0,0,canvas.width,canvas.height);let any=false;pieces.forEach(p=>{if(p.opacity<=0)return;any=true;ctx.save();ctx.globalAlpha=p.opacity;ctx.fillStyle=p.color;ctx.translate(p.x,p.y);ctx.rotate(p.tilt*Math.PI/180);p.shape==='rect'?ctx.fillRect(-p.r,-p.r/2,p.r*2,p.r):(ctx.beginPath(),ctx.arc(0,0,p.r,0,Math.PI*2),ctx.fill());ctx.restore();p.tileAngle+=p.tiltAngleInc;p.tilt=Math.sin(p.tileAngle)*12;p.x+=p.vx;p.y+=p.vy;p.vy+=0.025;if(p.y>p.fadeStart)p.opacity-=0.018;});frame++;if(frame<220&&any)requestAnimationFrame(draw);else ctx.clearRect(0,0,canvas.width,canvas.height);})();
+}
+
+function renderChecklist(){
+  const scroll=document.getElementById('checklist-scroll');
+  if(!activeChecklist){
+    document.getElementById('progress-sticky').style.display='none';
+    scroll.innerHTML=`<div class="cl-topbar"><span class="cl-title">My Checklist</span></div><div class="cl-empty"><strong>No checklist yet</strong>Head to the Chat tab — I'll create a personalized checklist based on your vendor type.</div><div style="margin-top:10px"><div class="cl-section-title" style="padding-bottom:4px;border-bottom:0.5px solid var(--color-border)">Or choose a vendor type now:</div>${Object.entries(CHECKLISTS).map(([k,cl])=>`<div class="cl-pick-item" onclick="setChecklist('${k}')"><span>${cl.label}</span><span class="cl-pick-arrow">→</span></div>`).join('')}</div>`;
+    return;
+  }
+  updateProgressBar(false);
+  const cl=CHECKLISTS[activeChecklist];
+  let html=`<div class="cl-topbar"><span class="cl-title">${cl.label}</span><button class="cl-action-btn" onclick="openEmailModal()"><svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>Email</button><button class="cl-action-btn" onclick="printChecklist()"><svg viewBox="0 0 24 24"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg>Print</button><button class="cl-action-btn" onclick="resetChecklist()">Change type</button></div>`;
+  cl.sections.forEach(s=>{
+    html+=`<div class="cl-section"><div class="cl-section-title">${s.title}</div>`;
+    s.items.forEach(item=>{
+      const checked=!!checklistState[item.id],isAuto=autoCheckedIds.has(item.id),note=notes[item.id]||'',noteOpen=!!openNotes[item.id];
+      html+=`<div class="cl-item" id="item-${item.id}"><div class="cl-item-row" onclick="toggleItem('${item.id}')"><div class="cl-box ${checked?'checked':''}" id="box-${item.id}"></div><div class="cl-label ${checked?'done':''}">${item.text}${isAuto?'<span class="auto-badge">auto</span>':''}</div></div><div class="cl-item-actions"><button class="cl-note-toggle" onclick="toggleNoteArea('${item.id}')">${note?'Edit note':'+ Add note'}</button></div>${noteOpen?`<div class="cl-note-area"><textarea class="cl-note-input" id="note-input-${item.id}" placeholder="Add a note, reminder, or detail...">${note}</textarea><div class="cl-note-btns"><button class="cl-note-save" onclick="saveNote('${item.id}')">Save</button>${note?`<button class="cl-note-del" onclick="deleteNote('${item.id}')">Remove</button>`:''}</div></div>`:note?`<div class="cl-note-area"><div class="cl-note-display">${note}</div></div>`:''}</div>`;
+    });
+    html+=`</div>`;
+  });
+  scroll.innerHTML=html;
+}
+
+function toggleItem(id){const was=!!checklistState[id];checklistState[id]=!was;if(!checklistState[id])autoCheckedIds.delete(id);lsSave();const box=document.getElementById('box-'+id);if(box&&!was){box.classList.add('just-checked');setTimeout(()=>box.classList.remove('just-checked'),400);}renderChecklist();updateProgressBar(true);}
+function toggleNoteArea(id){openNotes[id]=!openNotes[id];renderChecklist();if(openNotes[id])setTimeout(()=>{const el=document.getElementById('note-input-'+id);if(el)el.focus();},50);}
+function saveNote(id){const el=document.getElementById('note-input-'+id);if(el)notes[id]=el.value.trim();openNotes[id]=false;lsSave();renderChecklist();}
+function deleteNote(id){delete notes[id];openNotes[id]=false;lsSave();renderChecklist();}
+function setChecklist(k){
+  const analytics=loadAnalytics();const idx=analytics.sessionLog.findIndex(s=>s.id===sessionId);
+  if(idx>=0){analytics.sessionLog[idx].checklist.type=k;analytics.sessionLog[idx].checklist.engaged=true;saveAnalytics(analytics);}
+  activeChecklist=k;lastPct=0;currentPctMilestone=0;lsSave();renderChecklist();updateProgressBar(false);
+}
+function resetChecklist(){activeChecklist=null;lsSave();renderChecklist();}
+function autoCheckItems(ids){ids.forEach(id=>{checklistState[id]=true;autoCheckedIds.add(id);});lsSave();}
+
+function buildEmailBody(){if(!activeChecklist)return'';const cl=CHECKLISTS[activeChecklist],{total,done}=getCompletion(activeChecklist);let b=`Jersey City Farmers Market Vendor Setup Guide\n${cl.label} Checklist\nProgress: ${done}/${total} steps completed\n\n`;cl.sections.forEach(s=>{b+=`${s.title}\n${'─'.repeat(40)}\n`;s.items.forEach(i=>{b+=`${checklistState[i.id]?'[x]':'[ ]'} ${i.text}\n`;if(notes[i.id])b+=`    Note: ${notes[i.id]}\n`;});b+='\n';});b+=`Generated by the Jersey City Farmers Market Vendor Setup Guide\nJC Dept. of Health & Human Services\n1 Jackson Square, Jersey City, NJ 07305\n${HHS_URL}`;return b;}
+function openEmailModal(){document.getElementById('email-modal-container').innerHTML=`<div class="email-modal"><div class="email-modal-inner"><div class="email-modal-title">Email my checklist</div><div class="email-modal-sub">Enter your email and we'll open your mail client with a copy of your checklist and progress.</div><input class="email-modal-input" id="email-input" type="email" placeholder="your@email.com"/><div id="email-modal-msg" class="email-modal-msg" style="display:none"></div><div class="email-modal-actions"><button class="email-modal-cancel" onclick="closeEmailModal()">Cancel</button><button class="email-modal-send" onclick="sendEmail()">Send</button></div></div></div>`;}
+function closeEmailModal(){document.getElementById('email-modal-container').innerHTML='';}
+function sendEmail(){const el=document.getElementById('email-input'),email=el?el.value.trim():'';if(!email||!email.includes('@')){const msg=document.getElementById('email-modal-msg');if(msg){msg.textContent='Please enter a valid email address.';msg.style.display='block';}return;}const cl=CHECKLISTS[activeChecklist];window.open(`mailto:${email}?subject=${encodeURIComponent('JC Farmers Market Vendor Setup Guide — '+cl.label+' Checklist')}&body=${encodeURIComponent(buildEmailBody())}`,'_blank');const msg=document.getElementById('email-modal-msg');if(msg){msg.textContent='Your email client has been opened!';msg.style.display='block';msg.style.color='var(--color-green-dark)';}setTimeout(closeEmailModal,2500);}
+function printChecklist(){if(!activeChecklist)return;const cl=CHECKLISTS[activeChecklist],{total,done}=getCompletion(activeChecklist);let rows='';cl.sections.forEach(s=>{rows+=`<tr><td colspan="2" style="padding:10px 0 4px;font-size:11px;font-weight:600;color:#0F6E56;text-transform:uppercase;letter-spacing:0.04em;border-bottom:1px solid #e5e5e5">${s.title}</td></tr>`;s.items.forEach(i=>{const c=checklistState[i.id],n=notes[i.id],a=autoCheckedIds.has(i.id);rows+=`<tr><td style="width:22px;padding:7px 8px 7px 0;vertical-align:top"><div style="width:14px;height:14px;border:1.5px solid ${c?'#1D9E75':'#aaa'};border-radius:3px;background:${c?'#1D9E75':'white'};display:flex;align-items:center;justify-content:center">${c?'<div style="width:8px;height:4px;border-left:1.5px solid white;border-bottom:1.5px solid white;transform:rotate(-45deg) translateY(-1px)"></div>':''}</div></td><td style="padding:7px 0;border-bottom:0.5px solid #f0f0f0;font-size:12.5px;color:${c?'#999':'#222'};${c?'text-decoration:line-through':''}">${i.text}${a?'<span style="font-size:10px;background:#E1F5EE;color:#0F6E56;padding:1px 5px;border-radius:8px;margin-left:5px">auto</span>':''}${n?`<div style="font-size:11px;color:#888;margin-top:3px;font-style:italic">Note: ${n}</div>`:''}</td></tr>`;});});const pct=Math.round((done/total)*100);const win=window.open('','_blank');win.document.write(`<!DOCTYPE html><html><head><title>JC Vendor Checklist</title><style>body{font-family:system-ui,sans-serif;max-width:600px;margin:32px auto;color:#222;padding:0 20px}h1{font-size:18px;font-weight:600;margin-bottom:4px}.meta{font-size:13px;color:#666;margin-bottom:8px}.pt{background:#f0f0f0;border-radius:6px;height:8px;overflow:hidden;margin-bottom:4px}.pf{height:100%;background:#1D9E75;border-radius:6px;width:${pct}%}.pl{font-size:12px;color:#0F6E56;font-weight:600;margin-bottom:20px}table{width:100%;border-collapse:collapse}.ft{margin-top:28px;font-size:11px;color:#aaa;border-top:0.5px solid #eee;padding-top:12px}a{color:#0F6E56}@media print{body{margin:16px}}</style></head><body><h1>Jersey City Farmers Market Vendor Setup Guide</h1><div class="meta">${cl.label} Checklist</div><div class="pt"><div class="pf"></div></div><div class="pl">${done} of ${total} steps completed (${pct}%)</div><table>${rows}</table><div class="ft">Jersey City Dept. of Health &amp; Human Services<br>1 Jackson Square, Jersey City, NJ 07305 · (201) 547-6800<br><a href="${HHS_URL}">${HHS_URL}</a></div><script>window.onload=()=>setTimeout(()=>window.print(),300)<\/script></body></html>`);win.document.close();}
+function switchTab(tab){document.getElementById('tab-chat').classList.toggle('active',tab==='chat');document.getElementById('tab-checklist').classList.toggle('active',tab==='checklist');document.getElementById('chat-panel').classList.toggle('hidden',tab!=='chat');document.getElementById('checklist-panel').classList.toggle('hidden',tab!=='checklist');if(tab==='checklist'){renderChecklist();updateProgressBar(false);}}
+
+const messagesEl=document.getElementById('messages'),inputEl=document.getElementById('user-input'),sendBtn=document.getElementById('send-btn');
+function scrollDown(){messagesEl.scrollTop=messagesEl.scrollHeight;}
+function setLoading(v){isLoading=v;sendBtn.disabled=v;}
+function showTyping(){const d=document.createElement('div');d.className='msg bot';d.id='typing';const t=document.createElement('div');t.className='typing';for(let i=0;i<3;i++){const dot=document.createElement('div');dot.className='dot';t.appendChild(dot);}d.appendChild(t);messagesEl.appendChild(d);scrollDown();}
+function removeTyping(){const t=document.getElementById('typing');if(t)t.remove();}
+function extractTags(text){const cl=text.match(/\[CHECKLIST:([a-z_]+)\]/);const ids=[...text.matchAll(/\[CHECK:([a-z0-9_]+)\]/g)].map(m=>m[1]);const biz=text.match(/\[BUSINESS:([^\]]+)\]/);return{clKey:cl?cl[1]:null,checkIds:ids,businessName:biz?biz[1].trim():null};}
+
+function formatBotText(raw){
+  const stripped=raw.replace(/\[CHECKLIST:[a-z_]+\]/g,'').replace(/\[CHECK:[a-z0-9_]+\]/g,'').replace(/\[BUSINESS:[^\]]+\]/g,'').trim();
+  const lines=stripped.split('\n');const blocks=[];let i=0;
+  while(i<lines.length){
+    const line=lines[i];
+    if(/^#{1,3} /.test(line)){blocks.push({type:'heading',text:line.replace(/^#{1,3} /,'')});i++;continue;}
+    if(/^(\*|-|\d+\.) /.test(line)){
+      const items=[],isOrdered=/^\d+\. /.test(line);
+      while(i<lines.length&&/^(\*|-|\d+\.) /.test(lines[i])){items.push(lines[i].replace(/^(\*|-|\d+\.) /,''));i++;}
+      blocks.push({type:'list',ordered:isOrdered,items});continue;
+    }
+    if(line.trim()===''){if(blocks.length&&blocks[blocks.length-1].type!=='blank')blocks.push({type:'blank'});i++;continue;}
+    if(blocks.length&&blocks[blocks.length-1].type==='para'){blocks[blocks.length-1].text+='\n'+line;}
+    else{blocks.push({type:'para',text:line});}
+    i++;
+  }
+  function inlineFormat(t){return t.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\[([^\]]+)\]\(mailto:([^)]+)\)/g,'<a href="mailto:$2">$1</a>').replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g,(m,label,url)=>`<a href="${url.replace(/"/g,'%22')}" target="_blank" rel="noopener">${label}</a>`).replace(/(?<![">])(https?:\/\/[^\s<\]"]+)/g,(m,url)=>`<a href="${url.replace(/"/g,'%22')}" target="_blank" rel="noopener">${url}</a>`);}
+  let html='';
+  blocks.forEach(block=>{
+    if(block.type==='blank')return;
+    if(block.type==='heading'){html+=`<p><strong>${inlineFormat(block.text)}</strong></p>`;return;}
+    if(block.type==='list'){const tag=block.ordered?'ol':'ul';html+=`<${tag}>${block.items.map(it=>`<li>${inlineFormat(it)}</li>`).join('')}</${tag}>`;return;}
+    if(block.type==='para'){html+=`<p>${block.text.split('\n').map(l=>inlineFormat(l)).join('<br>')}</p>`;}
+  });
+  return html;
+}
+
+function addMessage(text,sender,chips){
+  const div=document.createElement('div');div.className=`msg ${sender}`;
+  const bubble=document.createElement('div');bubble.className='bubble';
+  bubble.innerHTML=sender==='bot'?formatBotText(text):text.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+  div.appendChild(bubble);
+  if(chips&&chips.length){const row=document.createElement('div');row.className='chips';chips.forEach(label=>{const btn=document.createElement('button');btn.className='chip';btn.textContent=label;btn.onclick=()=>handleSend(label);row.appendChild(btn);});div.appendChild(row);}
+  messagesEl.appendChild(div);scrollDown();
+}
+
+const SYSTEM_PROMPT=`You are a friendly, warm, and knowledgeable guide helping small business owners become approved vendors at Jersey City farmers markets. You are the Jersey City Farmers Market Vendor Setup Guide. Tone: warm, encouraging, plain language, like a great customer service agent.
+
+FORMATTING RULES:
+- Use bullet points (- item) for ALL lists of steps, documents, requirements, or options.
+- Use numbered lists (1. step) when sequence matters.
+- Use **bold** for key terms and section labels.
+- Separate distinct topics with a blank line.
+- Every URL and email MUST be a markdown link: [Label](URL) or [email](mailto:email).
+
+BUSINESS NAME TRACKING:
+- Naturally ask for the user's business name early in conversation if they haven't shared it.
+- When the user shares their business name, include at the very end: [BUSINESS:name of business]
+- Only capture this once per conversation.
+
+CHECKLIST TAGS (very end of response only):
+- Vendor type identified: [CHECKLIST:food_general|food_cottage|food_truck|raw_meat|non_food]
+- Step confirmed done: [CHECK:item_id]
+
+CHECKLIST IDs:
+FOOD GENERAL: fm1 fm2 fm3 fd1-fd9 fp1-fp4 fat1-fat3
+COTTAGE: cfm1-cfm3 cfl1-cfl7 cfp1-cfp4 cfat1-cfat2
+FOOD TRUCK: ftm1-ftm3 ftf1-ftf3 ftd1-ftd12 ftp1-ftp3 ftat1-ftat2
+RAW MEAT: rmm1-rmm3 rmd1-rmd8 rmx1-rmx4 rmp1-rmp3 rmat1-rmat2
+NON-FOOD: nfm1-nfm3 nfr1-nfr3 nfat1-nfat2
+
+JERSEY CITY HHS:
+- [Jersey City Health & Human Services](https://www.jerseycitynj.gov/cityhall/health)
+- [Division of Food & Nutrition](https://www.jerseycitynj.gov/cityhall/health/divisionoffoodnutrition)
+- [Division of Environmental Health](https://www.jerseycitynj.gov/cityhall/health/divisionofhealth)
+- Address: 1 Jackson Square, Jersey City, NJ 07305 | Phone: (201) 547-6800
+- [Get directions](https://www.google.com/maps/place/360+Martin+Luther+King+Dr,+Jersey+City,+NJ+07305/@40.7105433,-74.0791122,17z/data=!3m1!4b1!4m5!3m4!1s0x89c2512076416d3f:0x66ffb88c56392b7e!8m2!3d40.7105433!4d-74.0769182)
+- Jose Vargas: [jvargas@jcnj.org](mailto:jvargas@jcnj.org) | (201) 547-6840
+- Morgan Spann: [mspann@jcnj.org](mailto:mspann@jcnj.org) | (201) 547-5289
+- Offer Cohen: [Ocohen@jcnj.org](mailto:Ocohen@jcnj.org) | (201) 547-5838
+
+MARKETS:
+
+1. Historic Downtown JC Farmers Market
+   - Website: [jcdowntown.org](https://jcdowntown.org/event/farmers-market/) | Instagram: [@hdsid_jc](https://www.instagram.com/hdsid_jc)
+   - Year-round Mon+Thu | Grove St PATH Plaza | 50-100 vendors | $125/day ($100 HDSID)
+   - Commuter crowd — quick, transactional shopping
+   - Best for: Grab-and-go, everyday staples, high foot traffic
+   - Holiday Market: December weekends — great for seasonal vendors
+
+2. Riverview Farmers Market
+   - Website: [riverviewfarmersmarket.org](https://www.riverviewfarmersmarket.org) | Instagram: [@riverviewfarmersmarket](https://www.instagram.com/riverviewfarmersmarket)
+   - May–Sunday before Thanksgiving, Sundays 10am–2pm | Riverview-Fisk Park, JC Heights
+   - $50–$65/day (season discount available) | Destination/community crowd
+   - Best for: Artisan makers, specialty food, brand-building, community engagement
+   - Events: Sustainability Day, Peach Pie Contest, Fall Harvest, Day of the Dead
+   - Heights Holiday Market: Special one-day pop-up, typically first Saturday of December, 10am–4pm. Festival atmosphere with holiday decor, free photo booth, live performances, festive food court. Great for artisans, makers, and food vendors looking for holiday sales.
+
+3. Lincoln Park Farmers Market (West Side Community Alliance)
+   - Website: [jcwsca.org](https://www.jcwsca.org/farmers-market/) | Instagram: [@fmlpws](https://www.instagram.com/fmlpws)
+   - June 16–October 26, Sundays 10am–2pm | Lincoln Park | $30/table
+   - Best for: Budget-conscious, first-timers, testing a new product line
+
+4. Hamilton Park Farmers Market
+   - Website: [hpnajc.org](https://www.hpnajc.org/Farmers-Market) | Instagram: [@hamiltonparkfarmersmarket](https://www.instagram.com/hamiltonparkfarmersmarket/)
+   - Hamilton Park, Jersey City
+
+5. Van Vorst Park Farmers Market
+   - Instagram: [@vanvorstparkjc](https://www.instagram.com/vanvorstparkjc)
+   - Year-round Saturdays 9am–2pm | Van Vorst Park | Smaller footprint
+   - Best for: Year-round Saturday presence, neighborhood community
+
+6. Paulus Hook Farmers Market
+   - April–December Saturdays 10am–4pm | Washington St S of Dudley
+   - Best for: Premium/specialty products, affluent walkable neighborhood
+
+7. Journal Square Farmers Market (The Green Market)
+   - Website: [thenewjournalsquare.com](https://thenewjournalsquare.com/farmers-market/)
+   - Tuesdays 3–8pm May–November | 136 Magnolia Ave | Commuter crowd
+
+8. Leonard Gordon Farm Stand
+   - June–November Saturdays 8am–3pm | Leonard Gordon Park
+
+More: [JC Families farmers market guide](https://jcfamilies.com/farmers-market-in-jersey-city/)
+
+PERMITS:
+Food vendors need Temporary Food Vendor Permit from JC Bureau of Licensing. Docs printed, in person only.
+
+To apply: 1 Jackson Square, Jersey City, NJ 07305 | [Get directions](https://www.google.com/maps/place/360+Martin+Luther+King+Dr,+Jersey+City,+NJ+07305/@40.7105433,-74.0791122,17z/data=!3m1!4b1!4m5!3m4!1s0x89c2512076416d3f:0x66ffb88c56392b7e!8m2!3d40.7105433!4d-74.0769182) | (201) 547-6800
+
+Fees: 1-3d $25 | 4-5d $50 | 6-7d $75 | 8+d $150 | Licensed JC establishment: free
+
+Standard docs: health license, inspection report, ID, NJ cert authority, tax ID, food invoice, food protection cert, $500K insurance, vendor application.
+Food trucks also: vehicle reg+insurance, fire dept cert first — (201) 547-4255.
+Raw meat also: USDA grant of inspection, slaughterhouse invoice, food handler cert.
+Cottage food: [nj.gov/health/cottagefood/apply-renew](https://www.nj.gov/health/cottagefood/apply-renew/) | [cfo@doh.nj.gov](mailto:cfo@doh.nj.gov) | $100 fee.
+
+BEHAVIOR: Ask about business and goals before recommending markets. All tags go at very end.`;
+
+async function callAPI(userMessage){
+  conversationHistory.push({role:'user',content:userMessage});setLoading(true);showTyping();
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:SYSTEM_PROMPT,messages:conversationHistory})});
+    const data=await res.json();removeTyping();
+    const reply=data.content?.map(b=>b.type==='text'?b.text:'').join('')||"I'm sorry, I had trouble responding. Please try again.";
+    conversationHistory.push({role:'assistant',content:reply});
+    const{clKey,checkIds,businessName}=extractTags(reply);
+    let changed=false;
+    if(clKey&&CHECKLISTS[clKey]){
+      const analytics=loadAnalytics();const idx=analytics.sessionLog.findIndex(s=>s.id===sessionId);
+      if(idx>=0){analytics.sessionLog[idx].checklist.type=clKey;analytics.sessionLog[idx].checklist.engaged=true;saveAnalytics(analytics);}
+      activeChecklist=clKey;lastPct=0;currentPctMilestone=0;changed=true;
+    }
+    if(checkIds.length>0){autoCheckItems(checkIds);changed=true;}
+    if(changed){lsSave();updateProgressBar(true);}
+    if(businessName)recordBusinessName(businessName);
+    addMessage(reply,'bot');
+    if(checkIds.length>0){setTimeout(()=>{const tb=document.getElementById('tab-checklist');tb.style.background='#1D9E75';tb.style.color='white';setTimeout(()=>{if(!tb.classList.contains('active')){tb.style.background='';tb.style.color='';}},2000);},500);}
+  }catch(e){removeTyping();addMessage("Sorry, I ran into a connection issue. Please try again in a moment.",'bot');}
+  setLoading(false);
+}
+
+function handleSend(text){const msg=(text||inputEl.value).trim();if(!msg||isLoading)return;inputEl.value='';inputEl.style.height='auto';addMessage(msg,'user');callAPI(msg);}
+sendBtn.onclick=()=>handleSend();
+inputEl.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();handleSend();}});
+inputEl.addEventListener('input',()=>{inputEl.style.height='auto';inputEl.style.height=Math.min(inputEl.scrollHeight,80)+'px';});
+
+lsLoad();
+initAnalytics();
+setTimeout(()=>{
+  if(activeChecklist){const{done,total}=getCompletion(activeChecklist);lastPct=total>0?Math.round((done/total)*100):0;}
+  const returning=activeChecklist!==null,cl=returning?CHECKLISTS[activeChecklist]:null;
+  const{done,total}=returning?getCompletion(activeChecklist):{done:0,total:0};
+  const pct=returning&&total>0?Math.round((done/total)*100):0;
+  const welcome=returning
+    ?`Welcome back to the **Jersey City Farmers Market Vendor Setup Guide**! 👋\n\nYour **${cl.label}** checklist is ${pct}% complete — ${done} of ${total} steps done. Tap **My Checklist** to keep going!\n\nWhat can I help you with today?`
+    :`Welcome to the **Jersey City Farmers Market Vendor Setup Guide**! 👋\n\nI'm here to help you navigate everything you need to become an approved vendor at a Jersey City farmers market — from choosing the right market for your business, to getting your permits sorted with the [Jersey City Department of Health & Human Services](${HHS_URL}).\n\nAs we talk, I'll build a personalized checklist with a live progress tracker so you always know exactly where you stand.\n\nTo get started — what do you sell, and are you new to farmers markets?`;
+  addMessage(welcome,'bot',returning
+    ?["Continue where I left off","Show me all markets","I have a question"]
+    :["I sell food products","I sell non-food / crafts","Show me all available markets","What permits do I need?"]);
+},300);
+</script>
+</body>
+</html>
