@@ -528,7 +528,7 @@ BEHAVIOR: Ask about business and goals before recommending markets. All tags go 
 async function callAPI(userMessage){
   conversationHistory.push({role:'user',content:userMessage});setLoading(true);showTyping();
   try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:SYSTEM_PROMPT,messages:conversationHistory})});
+    const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:SYSTEM_PROMPT,messages:conversationHistory})});
     const data=await res.json();removeTyping();
     const reply=data.content?.map(b=>b.type==='text'?b.text:'').join('')||"I'm sorry, I had trouble responding. Please try again.";
     conversationHistory.push({role:'assistant',content:reply});
